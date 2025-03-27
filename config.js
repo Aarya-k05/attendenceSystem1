@@ -1,3 +1,6 @@
+// config.js
+import { initializeApp } from "firebase/app";
+
 const firebaseConfig = {
     apiKey: "AIzaSyCEeWpZ-U5Ul-2crVl-p63mtXdCHl1EmJY",
     authDomain: "attendance-c1a20.firebaseapp.com",
@@ -6,3 +9,6 @@ const firebaseConfig = {
     messagingSenderId: "1038346861821",
     appId: "1:1038346861821:web:ea7e787bd351cd4ed55294"
   };
+const app = initializeApp(firebaseConfig);
+
+export default app;
