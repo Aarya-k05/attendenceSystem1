@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Login</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+        h2 {
+            font-size: 2rem;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        input, button {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+        button {
+            background-color: #28A745;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        button:hover {
+            background-color: #1e7e34;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Teacher Login</h2>
+        <form id="teacherLogin">
+            <input type="email" id="teacherEmail" placeholder="Enter Email" required>
+            <input type="password" id="teacherPassword" placeholder="Enter Password" required>
+            <button type="submit">Login</button>
+        </form>
+    </div>
+    <script>
+        document.getElementById("teacherLogin").addEventListener("submit", function(event) {
+            event.preventDefault();
+            
+            // Get login details
+            const email = document.getElementById("teacherEmail").value;
+            const password = document.getElementById("teacherPassword").value;
+    
+            // Dummy check (replace with real authentication)
+            if (email === "teacher@example.com" && password === "password123") {
+                alert("Teacher login verified!");
+                window.location.href = "teacher_dashboard.html"; // Redirect to dashboard
+            } else {
+                alert("Invalid credentials. Please try again.");
+            }
+        });
+    </script>
+    
+</body>
+</html>
