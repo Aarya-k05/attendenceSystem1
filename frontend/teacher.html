@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Teacher Login</title>
+    <title>Teacher Login & Signup</title>
     <style>
         body {
             font-family: 'Arial', sans-serif;
@@ -20,16 +20,17 @@
             border-radius: 15px;
             box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.2);
             text-align: center;
+            width: 350px;
         }
         h2 {
-            font-size: 2rem;
+            font-size: 1.8rem;
             margin-bottom: 15px;
             color: #333;
         }
         input, button {
             width: 100%;
-            padding: 12px;
-            margin: 10px 0;
+            padding: 10px;
+            margin: 8px 0;
             border: 1px solid #ccc;
             border-radius: 8px;
             font-size: 1rem;
@@ -44,34 +45,137 @@
         button:hover {
             background-color: #1e7e34;
         }
+        .toggle {
+            background: none;
+            color: #007BFF;
+            border: none;
+            cursor: pointer;
+            margin-top: 10px;
+            text-decoration: underline;
+        }
+        .loading {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body>
+
     <div class="container">
-        <h2>Teacher Login</h2>
-        <form id="teacherLogin">
-            <input type="email" id="teacherEmail" placeholder="Enter Email" required>
-            <input type="password" id="teacherPassword" placeholder="Enter Password" required>
-            <button type="submit">Login</button>
+        <h2 id="formTitle">Teacher Login</h2>
+
+        <!-- LOGIN FORM -->
+        <form id="loginForm">
+            <input type="email" id="loginEmail" placeholder="Enter Email" required>
+            <input type="password" id="loginPassword" placeholder="Enter Password" required>
+            <button type="submit" id="loginBtn">Login</button>
         </form>
+
+        <!-- SIGNUP FORM (Hidden by Default) -->
+        <form id="signupForm" style="display: none;">
+            <input type="text" id="signupName" placeholder="Full Name" required>
+            <input type="email" id="signupEmail" placeholder="Enter Email" required>
+            <input type="password" id="signupPassword" placeholder="Enter Password" required>
+            <input type="text" id="signupSubject" placeholder="Subject Taught" required>
+            <button type="submit" id="signupBtn">Sign Up</button>
+        </form>
+
+        <button class="toggle" id="toggleForm">Create an account</button>
     </div>
-    <script>
-        document.getElementById("teacherLogin").addEventListener("submit", function(event) {
-            event.preventDefault();
-            
-            // Get login details
-            const email = document.getElementById("teacherEmail").value;
-            const password = document.getElementById("teacherPassword").value;
-    
-            // Dummy check (replace with real authentication)
-            if (email === "teacher@example.com" && password === "password123") {
-                alert("Teacher login verified!");
-                window.location.href = "teacher_dashboard.html"; // Redirect to dashboard
+
+    <script type="module">
+        import { auth, db, createUserWithEmailAndPassword, signInWithEmailAndPassword, setDoc, doc } from "./config.js";
+
+        // Toggle between login and signup
+        const toggleForm = document.getElementById("toggleForm");
+        const loginForm = document.getElementById("loginForm");
+        const signupForm = document.getElementById("signupForm");
+        const formTitle = document.getElementById("formTitle");
+
+        toggleForm.addEventListener("click", () => {
+            if (loginForm.style.display === "none") {
+                loginForm.style.display = "block";
+                signupForm.style.display = "none";
+                formTitle.innerText = "Teacher Login";
+                toggleForm.innerText = "Create an account";
             } else {
-                alert("Invalid credentials. Please try again.");
+                loginForm.style.display = "none";
+                signupForm.style.display = "block";
+                formTitle.innerText = "Teacher Signup";
+                toggleForm.innerText = "Already have an account? Login";
             }
         });
+
+        // Handle Login
+        loginForm.addEventListener("submit", async (event) => {
+            event.preventDefault();
+            const email = document.getElementById("loginEmail").value.trim();
+            const password = document.getElementById("loginPassword").value.trim();
+            const loginBtn = document.getElementById("loginBtn");
+
+            if (!email || !password) {
+                alert("Please enter email and password");
+                return;
+            }
+
+            loginBtn.innerText = "Logging in...";
+            loginBtn.classList.add("loading");
+
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+                alert("Login successful!");
+                window.location.href = "teacher_dashboard.html";  // Redirect to dashboard
+            } catch (error) {
+                alert("Login failed: " + error.message);
+            }
+
+            loginBtn.innerText = "Login";
+            loginBtn.classList.remove("loading");
+        });
+
+        // Handle Signup
+        signupForm.addEventListener("submit", async (event) => {
+            event.preventDefault();
+            const name = document.getElementById("signupName").value.trim();
+            const email = document.getElementById("signupEmail").value.trim();
+            const password = document.getElementById("signupPassword").value.trim();
+            const subject = document.getElementById("signupSubject").value.trim();
+            const signupBtn = document.getElementById("signupBtn");
+
+            if (!name || !email || !password || !subject) {
+                alert("All fields are required!");
+                return;
+            }
+
+            if (password.length < 6) {
+                alert("Password must be at least 6 characters");
+                return;
+            }
+
+            signupBtn.innerText = "Signing up...";
+            signupBtn.classList.add("loading");
+
+            try {
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                const user = userCredential.user;
+
+                // Store extra teacher details in Firestore
+                await setDoc(doc(db, "teachers", user.uid), {
+                    name: name,
+                    email: email,
+                    subject: subject
+                });
+
+                alert("Signup successful!");
+                window.location.href = "teacher_dashboard.html";  // Redirect to dashboard
+            } catch (error) {
+                alert("Signup failed: " + error.message);
+            }
+
+            signupBtn.innerText = "Sign Up";
+            signupBtn.classList.remove("loading");
+        });
     </script>
-    
+
 </body>
 </html>
