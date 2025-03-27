@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Parent Login</title>
+    <title>Parent Login & Signup</title>
     <style>
         body {
             font-family: 'Arial', sans-serif;
@@ -12,7 +12,7 @@
             align-items: center;
             justify-content: center;
             height: 100vh;
-            background: linear-gradient(135deg, #fff3e0, #ffcc80);
+            background: linear-gradient(135deg, #e3f2fd, #bbdefb);
         }
         .container {
             background: white;
@@ -20,45 +20,177 @@
             border-radius: 15px;
             box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.2);
             text-align: center;
+            width: 350px;
         }
         h2 {
-            font-size: 2rem;
+            font-size: 1.8rem;
             margin-bottom: 15px;
             color: #333;
         }
         input, button {
             width: 100%;
-            padding: 12px;
-            margin: 10px 0;
+            padding: 10px;
+            margin: 8px 0;
             border: 1px solid #ccc;
             border-radius: 8px;
             font-size: 1rem;
         }
         button {
-            background-color: #FFA500;
+            background-color: #28A745;
             color: white;
             border: none;
             cursor: pointer;
             transition: 0.3s;
         }
         button:hover {
-            background-color: #cc8400;
+            background-color: #1e7e34;
+        }
+        .toggle {
+            background: none;
+            color: #007BFF;
+            border: none;
+            cursor: pointer;
+            margin-top: 10px;
+            text-decoration: underline;
+        }
+        .loading {
+            background-color: #6c757d;
+            cursor: not-allowed;
         }
     </style>
 </head>
 <body>
+
     <div class="container">
-        <h2>Parent Login</h2>
-        <form id="parentLogin">
-            <input type="tel" id="parentPhone" placeholder="Enter Phone Number" required>
-            <button type="submit">Login</button>
+        <h2 id="formTitle">Parent Login</h2>
+
+        <!-- LOGIN FORM -->
+        <form id="loginForm">
+            <input type="email" id="loginEmail" placeholder="Enter Email" required>
+            <input type="password" id="loginPassword" placeholder="Enter Password" required>
+            <button type="submit" id="loginBtn">Login</button>
         </form>
+
+        <!-- SIGNUP FORM (Hidden by Default) -->
+        <form id="signupForm" style="display: none;">
+            <input type="text" id="signupName" placeholder="Parent Name" required>
+            <input type="text" id="signupPhone" placeholder="Parent Phone No." required>
+            <input type="text" id="signupStudentId" placeholder="Student ID" required>
+            <input type="email" id="signupEmail" placeholder="Enter Email" required>
+            <input type="password" id="signupPassword" placeholder="Enter Password" required>
+            <button type="submit" id="signupBtn">Sign Up</button>
+        </form>
+
+        <button class="toggle" id="toggleForm">Create an account</button>
     </div>
-    <script>
-        document.getElementById("parentLogin").addEventListener("submit", function(event) {
+
+    <script type="module">
+        import { auth, db } from "./config.js";
+        import { 
+            createUserWithEmailAndPassword, 
+            signInWithEmailAndPassword,
+            sendEmailVerification 
+        } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+        import { 
+            setDoc, doc 
+        } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+
+        // Toggle between login and signup
+        const toggleForm = document.getElementById("toggleForm");
+        const loginForm = document.getElementById("loginForm");
+        const signupForm = document.getElementById("signupForm");
+        const formTitle = document.getElementById("formTitle");
+
+        toggleForm.addEventListener("click", () => {
+            if (loginForm.style.display === "none") {
+                loginForm.style.display = "block";
+                signupForm.style.display = "none";
+                formTitle.innerText = "Parent Login";
+                toggleForm.innerText = "Create an account";
+            } else {
+                loginForm.style.display = "none";
+                signupForm.style.display = "block";
+                formTitle.innerText = "Parent Signup";
+                toggleForm.innerText = "Already have an account? Login";
+            }
+        });
+
+        // Handle Login
+        loginForm.addEventListener("submit", async (event) => {
             event.preventDefault();
-            alert("Parent login verified via phone!");
+            const email = document.getElementById("loginEmail").value.trim();
+            const password = document.getElementById("loginPassword").value.trim();
+            const loginBtn = document.getElementById("loginBtn");
+
+            loginBtn.innerText = "Logging in...";
+            loginBtn.classList.add("loading");
+
+            try {
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                const user = userCredential.user;
+
+                if (!user.emailVerified) {
+                    alert("Please verify your email before logging in.");
+                    loginBtn.innerText = "Login";
+                    loginBtn.classList.remove("loading");
+                    return;
+                }
+
+                alert("Login successful!");
+                window.location.href = "parent_dashboard.html";  // Redirect to dashboard
+            } catch (error) {
+                alert("Login failed: " + error.message);
+            }
+
+            loginBtn.innerText = "Login";
+            loginBtn.classList.remove("loading");
+        });
+
+        // Handle Signup
+        signupForm.addEventListener("submit", async (event) => {
+            event.preventDefault();
+            const name = document.getElementById("signupName").value.trim();
+            const phone = document.getElementById("signupPhone").value.trim();
+            const studentId = document.getElementById("signupStudentId").value.trim();
+            const email = document.getElementById("signupEmail").value.trim();
+            const password = document.getElementById("signupPassword").value.trim();
+            const signupBtn = document.getElementById("signupBtn");
+
+            signupBtn.innerText = "Signing up...";
+            signupBtn.classList.add("loading");
+
+            // Validate Phone Number (Must be 10 digits)
+            if (!/^\d{10}$/.test(phone)) {
+                alert("Enter a valid 10-digit phone number.");
+                signupBtn.innerText = "Sign Up";
+                signupBtn.classList.remove("loading");
+                return;
+            }
+
+            try {
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                const user = userCredential.user;
+
+                // Store parent details in Firestore
+                await setDoc(doc(db, "parents", user.uid), {
+                    name: name,
+                    phone: phone,
+                    studentId: studentId,
+                    email: email
+                });
+
+                await sendEmailVerification(user);
+                alert("Signup successful! Check your email for verification.");
+                signupForm.reset();
+                toggleForm.click();
+            } catch (error) {
+                alert("Signup failed: " + error.message);
+            }
+
+            signupBtn.innerText = "Sign Up";
+            signupBtn.classList.remove("loading");
         });
     </script>
+
 </body>
 </html>

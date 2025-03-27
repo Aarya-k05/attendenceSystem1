@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Login & Signup</title>
+    <script type="module" src="./config.js"></script>
     <style>
         body {
             font-family: 'Arial', sans-serif;
@@ -59,14 +60,12 @@
     <div class="container">
         <h2 id="formTitle">Student Login</h2>
 
-        <!-- LOGIN FORM -->
         <form id="loginForm">
             <input type="email" id="loginEmail" placeholder="Enter Email" required>
             <input type="password" id="loginPassword" placeholder="Enter Password" required>
             <button type="submit">Login</button>
         </form>
 
-        <!-- SIGNUP FORM (Hidden by Default) -->
         <form id="signupForm" style="display: none;">
             <input type="text" id="signupName" placeholder="Full Name" required>
             <input type="email" id="signupEmail" placeholder="Enter Email" required>
@@ -80,9 +79,8 @@
     </div>
 
     <script type="module">
-        import { auth, db, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, setDoc, doc } from "./config.js";
+        import { signUpUser, loginUser } from "./config.js";
 
-        // Toggle between login and signup
         const toggleForm = document.getElementById("toggleForm");
         const loginForm = document.getElementById("loginForm");
         const signupForm = document.getElementById("signupForm");
@@ -102,29 +100,13 @@
             }
         });
 
-        // Handle Login
         loginForm.addEventListener("submit", async (event) => {
             event.preventDefault();
             const email = document.getElementById("loginEmail").value;
             const password = document.getElementById("loginPassword").value;
-
-            try {
-                const userCredential = await signInWithEmailAndPassword(auth, email, password);
-                const user = userCredential.user;
-
-                if (!user.emailVerified) {
-                    alert("Please verify your email before logging in.");
-                    return;
-                }
-
-                alert("Login successful!");
-                window.location.href = "student_dashboard.html";  // Redirect to dashboard
-            } catch (error) {
-                alert("Login failed: " + error.message);
-            }
+            await loginUser("students", email, password, "student_dashboard.html");
         });
 
-        // Handle Signup
         signupForm.addEventListener("submit", async (event) => {
             event.preventDefault();
             const name = document.getElementById("signupName").value;
@@ -133,24 +115,7 @@
             const studentClass = document.getElementById("signupClass").value;
             const rollNumber = document.getElementById("signupRoll").value;
 
-            try {
-                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-                const user = userCredential.user;
-
-                // Store extra student details in Firestore
-                await setDoc(doc(db, "students", user.uid), {
-                    name: name,
-                    email: email,
-                    class: studentClass,
-                    rollNumber: rollNumber
-                });
-
-                // Send email verification
-                await sendEmailVerification(user);
-                alert("Signup successful! Please verify your email before logging in.");
-            } catch (error) {
-                alert("Signup failed: " + error.message);
-            }
+            await signUpUser("students", email, password, { name, studentClass, rollNumber });
         });
     </script>
 
